@@ -1,0 +1,39 @@
+[psql]
+  dbname  = "documind_dev"
+  host    = "localhost"
+  port    = 5432
+  user    = "postgres"
+  pass    = "dev_password"
+  sslmode = "disable"
+  schema  = "public"
+
+  # Output directory for generated models
+  output = "internal/infrastructure/database/models"
+
+  # Package name for generated models
+  pkgname = "models"
+
+  # Generate struct tags
+  add-global-variants = true
+  add-panic-variants = true
+
+  # Tag customization
+  tag-ignore = [""]
+
+  # Relationship configuration
+  relationships = true
+
+  # Auto columns (created_at, updated_at)
+  auto-columns = true
+
+  # JSON null types
+  json-type-name = "null.JSON"
+
+  # Use proper types for UUIDs
+  uuid-type = "uuid.UUID"
+
+  # Generate test files
+  no-tests = true
+
+  # Wipe output directory before generation
+  wipe = true

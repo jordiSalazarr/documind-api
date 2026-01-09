@@ -1,0 +1,901 @@
+openapi: 3.0.3
+info:
+  title: DocuMind API
+  description: |
+    DocuMind is a knowledge management system for documenting workflows, decisions, rules, and other knowledge items.
+
+    ## Features
+    - Workspace & Project Management
+    - Customizable Item Types
+    - Versioned Knowledge Items
+    - Item Relations (typed, directional/non-directional)
+    - Full-Text Search
+    - Semantic Search with Vector Embeddings
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@documind.com
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Development server
+  - url: https://api.documind.com/v1
+    description: Production server
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Workspaces
+    description: Workspace management
+  - name: Projects
+    description: Project and area management
+  - name: Item Types
+    description: Item type schema management
+  - name: Items
+    description: Knowledge item management
+  - name: Relations
+    description: Item-to-item relation management
+  - name: Search
+    description: Search endpoints (full-text and semantic)
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      tags: [Health]
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  time:
+                    type: string
+                    format: date-time
+
+  # ===== Workspaces =====
+  /workspaces:
+    get:
+      summary: List all workspaces
+      tags: [Workspaces]
+      responses:
+        '200':
+          description: List of workspaces
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workspace'
+    post:
+      summary: Create a new workspace
+      tags: [Workspaces]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkspaceRequest'
+      responses:
+        '201':
+          description: Workspace created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+
+  /workspaces/{id}:
+    get:
+      summary: Get workspace by ID
+      tags: [Workspaces]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Workspace details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '404':
+          description: Workspace not found
+
+  # ===== Projects =====
+  /projects:
+    get:
+      summary: List projects in a workspace
+      tags: [Projects]
+      parameters:
+        - name: workspace_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Project'
+    post:
+      summary: Create a new project
+      tags: [Projects]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectRequest'
+      responses:
+        '201':
+          description: Project created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+
+  # ===== Item Types =====
+  /item-types:
+    get:
+      summary: List item types in a workspace
+      tags: [Item Types]
+      parameters:
+        - name: workspace_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of item types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ItemType'
+    post:
+      summary: Create a new item type
+      tags: [Item Types]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateItemTypeRequest'
+      responses:
+        '201':
+          description: Item type created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemType'
+
+  # ===== Items =====
+  /items:
+    get:
+      summary: List items in a project
+      tags: [Items]
+      parameters:
+        - name: project_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Item'
+    post:
+      summary: Create a new item with first version
+      tags: [Items]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateItemRequest'
+      responses:
+        '201':
+          description: Item created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemWithVersion'
+
+  /items/{id}:
+    get:
+      summary: Get item with latest version
+      tags: [Items]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Item details with latest version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemWithVersion'
+
+  /items/{id}/versions:
+    get:
+      summary: List all versions of an item
+      tags: [Items]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of item versions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ItemVersion'
+    post:
+      summary: Create a new version of an item
+      tags: [Items]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateItemVersionRequest'
+      responses:
+        '201':
+          description: Version created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemVersion'
+
+  # ===== Relation Types =====
+  /relation-types:
+    get:
+      summary: List relation types in a workspace
+      tags: [Relations]
+      parameters:
+        - name: workspace_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of relation types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RelationType'
+    post:
+      summary: Create a new relation type
+      tags: [Relations]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRelationTypeRequest'
+      responses:
+        '201':
+          description: Relation type created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RelationType'
+
+  /relation-types/{id}:
+    get:
+      summary: Get relation type by ID
+      tags: [Relations]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Relation type details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RelationType'
+
+  # ===== Relations =====
+  /relations:
+    get:
+      summary: List relations for an item
+      tags: [Relations]
+      parameters:
+        - name: item_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of relations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Relation'
+    post:
+      summary: Create a new relation between items
+      tags: [Relations]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRelationRequest'
+      responses:
+        '201':
+          description: Relation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Relation'
+
+  /relations/{id}:
+    get:
+      summary: Get relation by ID
+      tags: [Relations]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Relation details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Relation'
+    delete:
+      summary: Delete a relation
+      tags: [Relations]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Relation deleted
+
+  # ===== Search =====
+  /search/items:
+    get:
+      summary: Full-text search across item versions
+      tags: [Search]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search query
+          schema:
+            type: string
+        - name: workspace_id
+          in: query
+          description: Filter by workspace
+          schema:
+            type: string
+            format: uuid
+        - name: project_id
+          in: query
+          description: Filter by project
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+
+  /search/semantic:
+    post:
+      summary: Semantic search using vector embeddings
+      tags: [Search]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SemanticSearchRequest'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+
+  /embeddings:
+    put:
+      summary: Update embedding vector for an item version
+      tags: [Search]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEmbeddingRequest'
+      responses:
+        '200':
+          description: Embedding updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: embedding updated successfully
+
+components:
+  schemas:
+    Workspace:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateWorkspaceRequest:
+      type: object
+      required: [name, slug, owner_user_id, created_by]
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+        owner_user_id:
+          type: string
+          format: uuid
+        created_by:
+          type: string
+          format: uuid
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        workspace_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    CreateProjectRequest:
+      type: object
+      required: [workspace_id, name, slug, created_by]
+      properties:
+        workspace_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+        created_by:
+          type: string
+          format: uuid
+
+    ItemType:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        workspace_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+        color:
+          type: string
+        custom_field_schema:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+
+    CreateItemTypeRequest:
+      type: object
+      required: [workspace_id, name, slug, created_by]
+      properties:
+        workspace_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+        color:
+          type: string
+        custom_field_schema:
+          type: object
+        created_by:
+          type: string
+          format: uuid
+
+    Item:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        workspace_id:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+        area_id:
+          type: string
+          format: uuid
+          nullable: true
+        item_type_id:
+          type: string
+          format: uuid
+        latest_version:
+          type: integer
+        status:
+          type: string
+          enum: [draft, published, deprecated]
+        owner_user_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ItemVersion:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        item_id:
+          type: string
+          format: uuid
+        workspace_id:
+          type: string
+          format: uuid
+        version:
+          type: integer
+        title:
+          type: string
+        summary:
+          type: string
+        body_md:
+          type: string
+          description: Markdown content
+        custom_fields:
+          type: object
+        tags:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [draft, published, deprecated]
+        created_at:
+          type: string
+          format: date-time
+        created_by:
+          type: string
+          format: uuid
+
+    ItemWithVersion:
+      type: object
+      properties:
+        item:
+          $ref: '#/components/schemas/Item'
+        version:
+          $ref: '#/components/schemas/ItemVersion'
+
+    CreateItemRequest:
+      type: object
+      required: [workspace_id, project_id, item_type_id, title, owner_user_id, created_by]
+      properties:
+        workspace_id:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+        area_id:
+          type: string
+          format: uuid
+        item_type_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        summary:
+          type: string
+        body_md:
+          type: string
+        custom_fields:
+          type: object
+        tags:
+          type: array
+          items:
+            type: string
+        owner_user_id:
+          type: string
+          format: uuid
+        created_by:
+          type: string
+          format: uuid
+
+    CreateItemVersionRequest:
+      type: object
+      required: [title, created_by]
+      properties:
+        title:
+          type: string
+        summary:
+          type: string
+        body_md:
+          type: string
+        custom_fields:
+          type: object
+        tags:
+          type: array
+          items:
+            type: string
+        created_by:
+          type: string
+          format: uuid
+
+    RelationType:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        workspace_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: depends-on
+        slug:
+          type: string
+          example: depends_on
+        is_directional:
+          type: boolean
+          description: Whether the relation has direction (e.g., A depends-on B is different from B depends-on A)
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateRelationTypeRequest:
+      type: object
+      required: [workspace_id, name, slug]
+      properties:
+        workspace_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        is_directional:
+          type: boolean
+          default: true
+
+    Relation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        workspace_id:
+          type: string
+          format: uuid
+        from_item_id:
+          type: string
+          format: uuid
+        to_item_id:
+          type: string
+          format: uuid
+        relation_type_id:
+          type: string
+          format: uuid
+        relation_type:
+          $ref: '#/components/schemas/RelationType'
+        created_at:
+          type: string
+          format: date-time
+        created_by:
+          type: string
+          format: uuid
+
+    CreateRelationRequest:
+      type: object
+      required: [workspace_id, from_item_id, to_item_id, relation_type_id, created_by]
+      properties:
+        workspace_id:
+          type: string
+          format: uuid
+        from_item_id:
+          type: string
+          format: uuid
+          description: Source item in the relation
+        to_item_id:
+          type: string
+          format: uuid
+          description: Target item in the relation
+        relation_type_id:
+          type: string
+          format: uuid
+        created_by:
+          type: string
+          format: uuid
+
+    SearchResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemVersion'
+        total_count:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+        query:
+          type: string
+
+    SemanticSearchRequest:
+      type: object
+      required: [embedding]
+      properties:
+        embedding:
+          type: array
+          items:
+            type: number
+            format: float
+          description: 1536-dimensional embedding vector (OpenAI text-embedding-ada-002 format)
+          minItems: 1536
+          maxItems: 1536
+        workspace_id:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+        limit:
+          type: integer
+          default: 20
+          maximum: 100
+        offset:
+          type: integer
+          default: 0
+
+    UpdateEmbeddingRequest:
+      type: object
+      required: [version_id, embedding]
+      properties:
+        version_id:
+          type: string
+          format: uuid
+        embedding:
+          type: array
+          items:
+            type: number
+            format: float
+          description: 1536-dimensional embedding vector
+          minItems: 1536
+          maxItems: 1536
