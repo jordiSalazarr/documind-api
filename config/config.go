@@ -14,7 +14,7 @@ type Config struct {
 	AWS       AWSConfig
 	S3        S3Config
 	SQS       SQSConfig
-	Cognito   CognitoConfig
+	JWT       JWTConfig
 	OpenAI    OpenAIConfig
 	Search    SearchConfig
 	RateLimit RateLimitConfig
@@ -28,12 +28,15 @@ type ServerConfig struct {
 }
 
 type DatabaseConfig struct {
-	URL      string
-	Host     string
-	Port     string
-	Name     string
-	User     string
-	Password string
+	URL             string
+	Host            string
+	Port            string
+	Name            string
+	User            string
+	Password        string
+	MaxOpenConns    int
+	MaxIdleConns    int
+	ConnMaxLifetime int // seconds
 }
 
 type AWSConfig struct {
@@ -53,10 +56,9 @@ type SQSConfig struct {
 	QueueURL string
 }
 
-type CognitoConfig struct {
-	UserPoolID string
-	ClientID   string
-	Region     string
+type JWTConfig struct {
+	Secret      string
+	ExpiryHours int
 }
 
 type OpenAIConfig struct {
@@ -98,12 +100,15 @@ func Load() (*Config, error) {
 			Env:  getEnv("ENV", "development"),
 		},
 		Database: DatabaseConfig{
-			URL:      getEnv("DATABASE_URL", ""),
-			Host:     getEnv("DATABASE_HOST", "localhost"),
-			Port:     getEnv("DATABASE_PORT", "5432"),
-			Name:     getEnv("DATABASE_NAME", "documind_dev"),
-			User:     getEnv("DATABASE_USER", "postgres"),
-			Password: getEnv("DATABASE_PASSWORD", "dev_password"),
+			URL:             getEnv("DATABASE_URL", ""),
+			Host:            getEnv("DATABASE_HOST", "localhost"),
+			Port:            getEnv("DATABASE_PORT", "5432"),
+			Name:            getEnv("DATABASE_NAME", "documind_dev"),
+			User:            getEnv("DATABASE_USER", "postgres"),
+			Password:        getEnv("DATABASE_PASSWORD", "dev_password"),
+			MaxOpenConns:    getEnvAsInt("DB_MAX_OPEN_CONNS", 25),
+			MaxIdleConns:    getEnvAsInt("DB_MAX_IDLE_CONNS", 10),
+			ConnMaxLifetime: getEnvAsInt("DB_CONN_MAX_LIFETIME_SECS", 300),
 		},
 		AWS: AWSConfig{
 			Region:          getEnv("AWS_REGION", "us-east-1"),
@@ -119,10 +124,9 @@ func Load() (*Config, error) {
 		SQS: SQSConfig{
 			QueueURL: getEnv("SQS_QUEUE_URL", ""),
 		},
-		Cognito: CognitoConfig{
-			UserPoolID: getEnv("COGNITO_USER_POOL_ID", ""),
-			ClientID:   getEnv("COGNITO_CLIENT_ID", ""),
-			Region:     getEnv("COGNITO_REGION", "us-east-1"),
+		JWT: JWTConfig{
+			Secret:      getEnv("JWT_SECRET", ""),
+			ExpiryHours: getEnvAsInt("JWT_EXPIRY_HOURS", 72),
 		},
 		OpenAI: OpenAIConfig{
 			APIKey:         getEnv("OPENAI_API_KEY", ""),

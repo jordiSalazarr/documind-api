@@ -5,9 +5,8 @@ import (
 	"log"
 
 	"documind.jordi.org/config"
-	"documind.jordi.org/internal/domain/common"
-	"documind.jordi.org/internal/domain/knowledge"
-	"documind.jordi.org/internal/domain/workspace"
+	shared "documind.jordi.org/internal/shared/domain"
+	wsdomain "documind.jordi.org/internal/identity/workspace/domain"
 	_ "github.com/lib/pq"
 )
 
@@ -39,30 +38,14 @@ func main() {
 	// 4. Create test item types
 	// 5. Create test relation types
 	// 6. Create test items with versions
-	// 7. Create test sources
-	// 8. Link sources to items
-	// 9. Create test relations
 
 	// Example seed data structure:
-	_ = workspace.NewWorkspace(
+	_ = wsdomain.NewWorkspace(
 		"Acme Corp",
-		common.Slug("acme-corp"),
+		shared.Slug("acme-corp"),
 	)
 
-	_ = knowledge.NewItemType(
-		common.NewID(),
-		"Workflow",
-		common.Slug("workflow"),
-		map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"priority": map[string]interface{}{
-					"type": "string",
-					"enum": []string{"low", "medium", "high"},
-				},
-			},
-		},
-	)
+	_ = db // suppress unused
 
 	log.Println("Database seed completed")
 }
